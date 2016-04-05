@@ -12,7 +12,7 @@ SYNTAX_EXTENSION			= ppx
 DEBUG						= True
 
 ##### PROJECT VARIABLES
-PROJECT_NAME				= OcamlCordovaGeolocation
+PROJECT_NAME				= OcamlCordovaInAppBrowser
 VERSION						= 1.0.0
 
 #####
@@ -21,9 +21,9 @@ PROD_DIRECTORY				= www
 
 ##### js_of_ocaml configuration
 ML_DIRECTORY				= 	$(DEV_DIRECTORY)/ml
-ML_FILES 					=	$(ML_DIRECTORY)/inappbrowser.ml \
+ML_FILES 					=	$(ML_DIRECTORY)/in_app_browser.ml \
 								$(ML_DIRECTORY)/test.ml
-MLI_FILES 					=	$(ML_DIRECTORY)/inappbrowser.mli
+MLI_FILES 					=	$(ML_DIRECTORY)/in_app_browser.mli
 ML_JS_DIRECTORY				=	$(PROD_DIRECTORY)/js
 ML_JS_OUTPUT_FILE			=	main.js
 
@@ -92,7 +92,15 @@ ifeq ($(DEBUG),True)
 ###################################### Rules ###################################
 .PHONY: clean js_of_ocaml css clean_js_of_ocaml clean_css re_css re_js_of_ocaml re prod re_prod init android init_dir init_dep
 
-all: init_dir css js_of_ocaml $(PROD_DIRECTORY_LIST)
+all: init_dir css gen_js_api $(PROD_DIRECTORY_LIST)
+
+gen_js_api:
+	mkdir -p $(ML_JS_DIRECTORY)
+	ocamlfind gen_js_api/gen_js_api $(MLI_FILES)
+	ocamlfind ocamlc -package gen_js_api $(MLI_FILES)
+	ocamlfind ocamlc -I $(ML_DIRECTORY) -o $(TMP_OUT_BYTECODE) \
+		-no-check-prims -package gen_js_api -package js_of_ocaml -package js_of_ocaml.ppx -linkpkg $(ML_FILES)
+	$(CC_JS) --pretty --debug-info +gen_js_api/ojs_runtime.js $(TMP_OUT_BYTECODE)
 
 ##### Compile ml to js
 js_of_ocaml:
